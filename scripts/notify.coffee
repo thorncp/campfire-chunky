@@ -21,6 +21,7 @@ QS = require "querystring"
 module.exports = (robot) ->
   robot.hear /(?:^|\s)(\w+)(?=\s|$)/i, (msg) ->
     sender   = msg.message.user.name.toLowerCase()
+    msg.send("debug matches: #{msg.match.toString()}")
     username = msg.match[1].toLowerCase()
     notifies = []
 
