@@ -19,12 +19,10 @@ Prowl = require "prowler"
 QS = require "querystring"
 
 module.exports = (robot) ->
-  robot.hear /@(\w+)/i, (msg) ->
+  robot.hear /(^|\s)(\w+)($|\s)/i, (msg) ->
     sender   = msg.message.user.name.toLowerCase()
-    username = msg.match[1].toLowerCase()
+    username = msg.match[2].toLowerCase()
     notifies = []
-
-    msg.send "debug:#{sender}:#{username}"
 
     if username == "all" or username == "everyone"
       for username, apikey of robot.brain.data.notifiers
@@ -32,8 +30,6 @@ module.exports = (robot) ->
           notifies.push apikey
     else if apikey = robot.brain.data.notifiers[username]
       notifies.push apikey
-
-    msg.send notifies.toString()
 
     for notifier in notifies
       [protocol, apikey...] = notifier.split(':')
@@ -44,7 +40,7 @@ module.exports = (robot) ->
         when "prowl"
           notification = new Prowl.connection(apikey)
           notification.send
-            application: 'RoQua Hubot'
+            application: 'Campfire'
             event: 'Mention'
             description: msg.message.text
         when "nma"
@@ -59,17 +55,18 @@ module.exports = (robot) ->
               body
 
 
-  robot.respond /notify me by prowl with (\w+)/i, (msg) ->
-    apikey = msg.match[1].toLowerCase()
+  robot.respond /notify me as (\w+) with (\w+)/i, (msg) ->
+    username = msg.match[1].toLowerCase()
+    apikey   = msg.match[2].toLowerCase()
     robot.brain.data.notifiers ?= {}
-    robot.brain.data.notifiers[msg.message.user.name.toLowerCase()] = "prowl:#{apikey}"
-    msg.send "OK"
+    robot.brain.data.notifiers[username] = "prowl:#{apikey}"
+    msg.send "OK, #{username}"
 
-  robot.respond /notify me by nma with (\w+)/i, (msg) ->
-    apikey = msg.match[1].toLowerCase()
-    robot.brain.data.notifiers ?= {}
-    robot.brain.data.notifiers[msg.message.user.name.toLowerCase()] = "nma:#{apikey}"
-    msg.send "OK"
+  # robot.respond /notify me by nma with (\w+)/i, (msg) ->
+    # apikey = msg.match[1].toLowerCase()
+    # robot.brain.data.notifiers ?= {}
+    # robot.brain.data.notifiers[msg.message.user.name.toLowerCase()] = "nma:#{apikey}"
+    # msg.send "OK"
 
   robot.respond /list notifiers/i, (msg) ->
     for username, apikey of robot.brain.data.notifiers
