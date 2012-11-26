@@ -21,7 +21,7 @@ QS = require "querystring"
 module.exports = (robot) ->
   robot.hear /(?:^|\s)(\w+)(?=\s|$)/i, (msg) ->
     sender   = msg.message.user.name.toLowerCase()
-    username = msg.match[2].toLowerCase()
+    username = msg.match[1].toLowerCase()
     notifies = []
 
     if username == "@all" or username == "@everyone"
