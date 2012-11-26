@@ -24,7 +24,6 @@ module.exports = (robot) ->
     username = msg.match[1].toLowerCase()
     console.log(msg)
     console.log(msg.match)
-    msg.send("debug:#{msg.toString()}")
     notifies = []
 
     if username == "@all" or username == "@everyone"
