@@ -18,7 +18,8 @@
     "hubot": "2.3.2",
     "hubot-scripts": ">= 2.1.0",
     "optparse": "1.0.3",
-    "jsdom": "0.2.15"
+    "jsdom": "0.2.15",
+    "prowler": "0.0.3"
   },
 
   "engines": {
