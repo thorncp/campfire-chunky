@@ -19,12 +19,12 @@ Prowl = require "prowler"
 QS = require "querystring"
 
 module.exports = (robot) ->
-  robot.hear /(^|\s)(\w+)($|\s)/i, (msg) ->
+  robot.hear /(?:^|\s)(\w+)(?=\s|$)/i, (msg) ->
     sender   = msg.message.user.name.toLowerCase()
     username = msg.match[2].toLowerCase()
     notifies = []
 
-    if username == "all" or username == "everyone"
+    if username == "@all" or username == "@everyone"
       for username, apikey of robot.brain.data.notifiers
         unless username == sender
           notifies.push apikey
@@ -34,7 +34,7 @@ module.exports = (robot) ->
     for notifier in notifies
       [protocol, apikey...] = notifier.split(':')
       apikey = apikey.join('')
-      msg.send("Notified #{protocol} by #{apikey}")
+      msg.send("Notified #{username} by #{notifier}")
 
       switch protocol
         when "prowl"
