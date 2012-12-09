@@ -19,7 +19,6 @@ QS = require "querystring"
 
 module.exports = (robot) ->
   robot.hear /\w+/, (msg) ->
-    sender = msg.message.user.name.toLowerCase()
     text = msg.message.text
     registeredUsers = robot.brain.data.notifiers
 
@@ -30,8 +29,7 @@ module.exports = (robot) ->
       notifications.push(username) unless username in notifications
 
     shouldNotifyUser = (username) ->
-      username = username.toLowerCase()
-      username of registeredUsers
+      username.toLowerCase() of registeredUsers
 
     notifyAll = ->
       for username of registeredUsers
