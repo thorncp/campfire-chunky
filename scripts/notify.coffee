@@ -1,5 +1,5 @@
 # Description:
-#   Notifies you by Prowl or NotifyMyAndroid when you're mentioned
+#   Notifies you by Prowl when you're mentioned
 #
 # Dependencies:
 #   "prowler": "0.0.3"
@@ -8,8 +8,7 @@
 #   None
 #
 # Commands:
-#   hubot notify me by prowl with YOUR_PROWL_API_KEY
-#   hubot notify me by nma with YOUR_NMA_API_KEY
+#   hubot notify me as TRIGGER with YOUR_PROWL_API_KEY
 #   hubot list notifiers
 #
 # Author:
@@ -19,43 +18,52 @@ Prowl = require "prowler"
 QS = require "querystring"
 
 module.exports = (robot) ->
-  robot.hear /\b(\w+)\b/i, (msg) ->
-    sender   = msg.message.user.name.toLowerCase()
-    username = msg.match[1].toLowerCase()
-    console.log(msg)
-    console.log(msg.match)
-    notifies = []
+  robot.hear /\w+/, (msg) ->
+    sender = msg.message.user.name.toLowerCase()
+    text = msg.message.text
+    registeredUsers = robot.brain.data.notifiers
 
-    if username == "@all" or username == "@everyone"
-      for username, apikey of robot.brain.data.notifiers
-        unless username == sender
-          notifies.push apikey
-    else if apikey = robot.brain.data.notifiers[username]
-      notifies.push apikey
+    notifications = []
 
-    for notifier in notifies
-      [protocol, apikey...] = notifier.split(':')
-      apikey = apikey.join('')
-      msg.send("Notified #{username} by #{notifier}")
+    notifyUser = (username) ->
+      username = username.toLowerCase()
+      notifications.push(username) unless username in notifications
 
-      switch protocol
-        when "prowl"
-          notification = new Prowl.connection(apikey)
-          notification.send
-            application: 'Campfire'
-            event: 'Mention'
-            description: msg.message.text
-        when "nma"
-          params = 
-            apikey: apikey
-            application: "Hubot"
-            event: "Mention"
-            description: msg.message.text
-          msg.http("https://www.notifymyandroid.com/publicapi/notify")
-            .query(params)
-            .get() (err, res, body) ->
-              body
+    shouldNotifyUser = (username) ->
+      username = username.toLowerCase()
+      username of registeredUsers
 
+    notifyAll = ->
+      for username of registeredUsers
+        notifyUser(username)
+
+    shouldNotifyAll = ->
+      [/@all/, /@everyone/, /@everybody/].some (pattern) ->
+        pattern.test(text)
+
+    sendNotification = (username) ->
+      [protocol, apikey] = registeredUsers[username].split(":")
+      # msg.send("Notified #{username} by #{protocol}:#{apikey}")
+      if protocol of notifiers
+        notifiers[protocol](apikey)
+
+    notifiers =
+      prowl: (apikey) ->
+        notification = new Prowl.connection(apikey)
+        notification.send
+          application: "Campfire"
+          event: "Mention"
+          description: text
+
+    if shouldNotifyAll()
+      notifyAll()
+    else
+      for word in text.split(/\b/) # TODO optimize
+        if shouldNotifyUser(word)
+          notifyUser(word)
+
+    for username in notifications
+      sendNotification(username)
 
   robot.respond /notify me as (\w+) with (\w+)/i, (msg) ->
     username = msg.match[1].toLowerCase()
@@ -63,12 +71,6 @@ module.exports = (robot) ->
     robot.brain.data.notifiers ?= {}
     robot.brain.data.notifiers[username] = "prowl:#{apikey}"
     msg.send "OK, #{username}"
-
-  # robot.respond /notify me by nma with (\w+)/i, (msg) ->
-    # apikey = msg.match[1].toLowerCase()
-    # robot.brain.data.notifiers ?= {}
-    # robot.brain.data.notifiers[msg.message.user.name.toLowerCase()] = "nma:#{apikey}"
-    # msg.send "OK"
 
   robot.respond /list notifiers/i, (msg) ->
     for username, apikey of robot.brain.data.notifiers
